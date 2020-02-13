@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1eaf442f-1a43-4e08-b928-c2c480d2ea57" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="538dfc3e-0882-4f0b-becb-b43768b30715" >
+		<db:generic-connection url="jdbc:postgresql://127.0.0.1:5432/postgres" driverClassName="org.postgresql.Driver" user="postgres" password="cliona" />
+	</db:config>
+	<flow name="create_flow" doc:id="610f1a06-10f5-4270-a11e-dc710be34021" >
+		<http:listener doc:name="Listener" doc:id="c95b4686-ce82-4026-a5d6-4c6e5ecf77d8" config-ref="HTTP_Listener_config" path="/create" allowedMethods="GET"/>
+		<db:execute-ddl doc:name="Execute DDL" doc:id="1382045a-d640-4dfe-b1e1-2c70d5935793" config-ref="Database_Config">
+			<db:sql >CREATE TABLE electronic(
+    id serial,
+    name VARCHAR(100),
+    description VARCHAR(255),
+    price integer,
+    discount integer
+)</db:sql>
+		</db:execute-ddl>
+		<ee:transform doc:name="Transform Message" doc:id="faf7b240-d813-4f6c-9611-e291d821190b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="9241d3d8-9bee-4a02-87cd-edaedde795af" message="#[payload]"/>
+	</flow>
+	<flow name="insert_flow" doc:id="060c6c45-45b1-4ab7-8272-58d73f5efb2d" >
+		<http:listener doc:name="Listener" doc:id="083324c7-a75a-4868-8e80-fcabacd5ab44" config-ref="HTTP_Listener_config" path="/insert" allowedMethods="POST"/>
+		<db:insert doc:name="Insert" doc:id="3b486056-8cec-4c05-ac84-e78a0c23e1fb" config-ref="Database_Config">
+			<db:sql >INSERT INTO electronic(name, description, price, discount)
+        VALUES (:name, :description, :price, :discount)</db:sql>
+			<db:input-parameters ><![CDATA[#[{'name': payload.name, 'description': payload.description, 'price': payload.price,'discount':payload.discount}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="d7d227ac-9490-462e-a8b5-1bf71eeb8b9f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="fba89782-7cee-4f24-8193-44ef3386100e" message="#[payload]"/>
+	</flow>
+	<flow name="read" doc:id="a2fba0bb-3bd7-444f-bc76-721ab5d73944" >
+		<http:listener doc:name="Listener" doc:id="5a344d6b-f2a6-4018-804b-587759e2296e" config-ref="HTTP_Listener_config" path="/select"/>
+		<db:select doc:name="Select" doc:id="5ebc525a-8644-4ad4-bf8b-97809c04bd58" config-ref="Database_Config">
+			<db:sql >select * from electronic where id=:id</db:sql>
+			<db:input-parameters ><![CDATA[#[{'id': attributes.queryParams.id}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="ecc5669c-f6f6-486d-858a-3042eaf2994d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="3129e554-c4c9-4b89-9ea2-b4daf9779056" message="#[payload]"/>
+	</flow>
+	<flow name="Flow" doc:id="47dcd4f4-9672-43a9-b391-552ea5d82799" >
+		<http:listener doc:name="Listener" doc:id="64c448c2-ffc5-497e-bc43-90b550facf66" config-ref="HTTP_Listener_config" path="/update"/>
+		<db:update doc:name="Update" doc:id="5df82315-306f-4411-a8d4-f20b8ebc3f4d" config-ref="Database_Config">
+			<db:sql >update electronic set name=:name where id=:id</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'id' : attributes.queryParams.id,
+	'name': attributes.queryParams.name
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Transform Message" doc:id="45fd950f-58e9-4e46-90b8-b62d59c1cf18" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="f8978a71-4407-406b-a8b2-29b627cede48" message="#[payload]"/>
+	</flow>
+	<flow name="delete" doc:id="f5ae1752-5af8-4f22-b664-de4bccbdf380" >
+		<http:listener doc:name="Listener" doc:id="ff1b7daf-40bc-46bd-bc48-b37b5cb8846b" config-ref="HTTP_Listener_config" path="/delete"/>
+		<db:delete doc:name="Delete" doc:id="b38ecafd-50a0-4cdf-b707-61f9d91719eb" config-ref="Database_Config">
+			<db:sql >delete from electronic where id=:id</db:sql>
+			<db:input-parameters ><![CDATA[#[{
+	'id': attributes.queryParams.id
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message" doc:id="0aa9af91-fc7a-4bfd-af48-6134cd027c0f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="2e6d90d2-7e16-4a15-9a55-c9755e478900" message="#[payload]"/>
+	</flow>
+</mule>
