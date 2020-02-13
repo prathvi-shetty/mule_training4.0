@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="d35241bd-b287-486d-8fc7-56d7dbcd69ae" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="customer" doc:id="a96a5571-a388-4b30-9e25-ff0acc1716d3" >
+		<http:listener doc:name="customerListener" doc:id="b780f1d0-9f9c-4458-90f5-6906d88f11ff" config-ref="HTTP_Listener_config" path="/customer"/>
+		<logger level="INFO" doc:name="Logger" doc:id="549031f6-b39e-40e0-936d-38938ea3a0eb" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="c0a5283a-164a-433a-bfb1-ca2889a723d0" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+message: payload.email
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="a67a4ba7-54fa-47b3-80ec-c4767a9273c2" message="#[payload.message]" />
+		<choice doc:name="Choice" doc:id="f2dfd1e5-c36c-41ea-a79e-45895f7fd5d6" >
+			<when expression='#[payload.message contains "@gmail."]'>
+				<set-payload value='#[payload.message ++ "has domain gmail"]' doc:name="Set Payload" doc:id="2b80bad4-3c95-48c2-91f1-3ed872f90610" />
+				<logger level="INFO" doc:name="Logger" doc:id="d45d8162-a8eb-4db1-bee8-01d7307d6c06" message='#[payload ++ "gmail"]'/>
+			</when>
+			<when expression='#[payload.message contains "@yahoo."]'>
+				<set-payload value='#[payload.message ++ "has domain yahoo"]' doc:name="Set Payload" doc:id="3ec9a7f5-d507-4282-bb6d-9daf795efa2c" />
+				<logger level="INFO" doc:name="Logger" doc:id="56a30871-917b-4123-a0a2-1e4e571a9c67" message='#[payload ++ "yahoo"]'/>
+
+			</when>
+			<when expression='payload.message contains "@triconinfotech."'>
+				<set-payload value='#[payload.message ++ "has domain tricon"]' doc:name="Set Payload" doc:id="fc3cd942-6d45-454c-93c2-ed89eb10a5f9" />
+				<logger level="INFO" doc:name="Logger" doc:id="f7427732-9108-46d6-b431-89c6a54842ae" message='#[payload ++ "yahoo"]'/>
+			</when>
+			<otherwise >
+				<set-payload value='#[payload.message ++ "has domain default"]' doc:name="Set Payload" doc:id="a8276624-5b1d-4325-956d-3599b8fc35eb" />
+				<logger level="INFO" doc:name="Logger" doc:id="5e83a427-4aa7-456f-8bb7-185313535806" message='#[payload ++ "default"]'/>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>
