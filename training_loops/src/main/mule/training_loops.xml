@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="a0635119-d68d-496c-a5dc-2dad8f1a2c65" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="training_loopsFlow" doc:id="4b3f59f8-515f-4813-bb3f-41f510e10669" >
+		<http:listener doc:name="Listener" doc:id="888d5df4-9e22-41c0-987a-ec30b4834ce4" path="/customer" config-ref="HTTP_Listener_config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="63f7ce85-adc1-4f30-964b-b5dabee3603e" message="#[payload.email]"/>
+		<foreach doc:name="For Each" doc:id="7dec3f14-05b3-46b0-9316-bf4233a63669">
+			<ee:transform doc:name="Transform Message" doc:id="18da69e7-5c13-429f-85a1-f79c96daf41d" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+'email' : vars.rootMessage.payload.email}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<logger level="INFO" doc:name="Logger" doc:id="95807329-703a-46de-83fd-8b96b9d87d28" message="#[payload]"/>
+			<choice doc:name="Choice" doc:id="66fd326e-cbc6-459d-9beb-4141019441f0">
+			<when expression='#[payload.email contains "gmail"]'>
+				<flow-ref doc:name="Flow Reference" doc:id="3770ef8b-5b3c-4979-86fc-a3e8c7266d22" name="gmails" />
+			</when>
+			<when expression='#[payload.email contains "yahoo"]'>
+				<flow-ref doc:name="Flow Reference" doc:id="6048147d-7ed8-4cb2-a48a-ba30e93060fa" name="yahoo" />
+			</when>
+				<when expression='#[payload.email==" "]'>
+					<ee:transform doc:name="Transform Message" doc:id="a84c2e26-5f46-4757-bbf5-9963d39398c6">
+						<ee:message>
+							<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{email : "m"}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</when>
+				<otherwise >
+					<logger level="INFO" doc:name="Logger" doc:id="24c19e5a-52bf-432f-ab5a-f1b97aae91ea" message="DEFAULT"/>
+				</otherwise>
+		</choice>
+			<set-payload value="#[payload]" doc:name="Set Payload" doc:id="6e62214c-fc27-43cb-a849-61b8c4a89ef6" />
+			<logger level="INFO" doc:name="Logger" doc:id="c6ef1469-7b39-40b6-8270-035c6132cceb" message="--------------------#[payload]" />
+		</foreach>
+		<logger level="INFO" doc:name="Logger" doc:id="d655eda6-1af6-43c2-9109-9c19b10ec89c" message="#[payload.email]"/>
+	</flow>
+	<flow name="yahoo" doc:id="e7395120-51fa-4a8b-b377-b7e89d1ccafb">
+		<logger level="INFO" doc:name="Logger" doc:id="78b9c456-392b-4e9a-b5fc-f30dc337b1b0" message="#[payload.email]" />
+	</flow>
+	<flow name="gmails" doc:id="fffedf1e-f98b-41e2-bf82-0a13543dcb6b" >
+		<logger level="INFO" doc:name="Logger" doc:id="8ef7ac62-68b4-4e05-b35c-ad10b5bc4afe" message="#[payload.email]"/>
+	</flow>
+	<flow name="simple_for" doc:id="2d70dde6-4a4f-4c21-92b4-a83537e04252" >
+		<http:listener doc:name="Listener" doc:id="ed3e5524-03cd-4bec-a0c2-e32693e4b182" config-ref="HTTP_Listener_config" path="/simple"/>
+		<logger level="INFO" doc:name="Logger" doc:id="01db7c01-c814-40c0-acdd-90e1a49ce1bd" message="#[payload]"/>
+		<foreach doc:name="For Each" doc:id="f969d7d1-d8dc-4ec0-ac7c-7deea0ffcafb" batchSize="2" collection="#[payload.email]">
+			<logger level="INFO" doc:name="Logger" doc:id="428c8c42-e00b-4029-b838-cb9c661f22bf" message="#[payload[0]]"/>
+		</foreach>
+	</flow>
+	<flow name="scatter_gather_flow" doc:id="c67e60f3-a1ee-41e2-b9c7-8ee4bc7922e2" >
+		<http:listener doc:name="Listener" doc:id="f7e8101c-0052-447d-856c-e084d9280c5b" config-ref="HTTP_Listener_config" path="/scatter"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="19191df7-a56d-4259-8c31-88b4b62fd744">
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="36519576-d383-47b0-b912-009397b30506" name="scatter_gather_flow1"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="68ee91f4-79ff-4296-a93f-2fcdd57cca36" name="scatter_gather_flow2"/>
+			</route>
+		</scatter-gather>
+		<ee:transform doc:name="Transform Message" doc:id="7b82770c-c13f-4c2e-9509-d2c908fb4375" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload..payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="scatter_gather_flow1" doc:id="e08aba45-5ef4-4e48-9e5c-462a816440ca" >
+		<ee:transform doc:name="Transform Message" doc:id="d7a12fff-c6ac-466d-bef8-aebe204aa932" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	sum: 20+10
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="scatter_gather_flow2" doc:id="3e4145d5-bb1a-4878-9361-e4b6ee6bde22" >
+		<ee:transform doc:name="Transform Message" doc:id="33eb5df3-aa6c-4d4f-a37d-8217401cd0ed" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	difference : 20-10
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="first_successful" doc:id="7746fe21-6ef0-40b0-9eca-52554353e347" >
+		<http:listener doc:name="Listener" doc:id="0dac5d8f-de33-4ab3-bdaa-fd2c39af8d0e" config-ref="HTTP_Listener_config" path="/first"/>
+		<first-successful doc:name="First Successful" doc:id="0c648d00-073c-4476-b2e6-3a94e2b198a0" >
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="fcce016f-ab0e-4a04-8eed-78dd44ee11e8" name="first_successful_flow2"/>
+			</route>
+			<route >
+				<flow-ref doc:name="Flow Reference" doc:id="1da15c55-d7cf-49a3-a8a2-78b7de23283e" name="first_successful_flow1"/>
+			</route>
+		</first-successful>
+		<ee:transform doc:name="Transform Message" doc:id="d0302940-16ca-44db-96a6-14c727aa3a2e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="first_successful_flow1" doc:id="ee9e0049-f82b-468e-b222-566b22199b6c" >
+		<ee:transform doc:name="Transform Message" doc:id="15116fff-63d1-4f51-87fd-bf23ea0043b3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	sum : 10 + 20
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="first_successful_flow2" doc:id="5f7868b0-8ff1-47de-87fa-6c6f127ee7c2" >
+		<ee:transform doc:name="Transform Message" doc:id="e8fcbeb4-1044-4c7f-a696-b746ea614f4d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	div : 20 / 10
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>

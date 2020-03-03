@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="customer" format="json">
+      <types:shape format="weave" example="examples/customer.json"><![CDATA[%dw 2.0
+
+type customer = Array<{|  title: String,   firstName: String,   lastName: String,   email: String,   postalCode: String,   state: String,   city: String,   country: String,   province: String,   telephone: String|}> {"example": "[{\\\"title\\\":\\\"Mr\\\",\\\"firstName\\\":\\\"Krishna\\\",\\\"lastName\\\":\\\"Sharma\\\",\\\"email\\\":\\\"richard.mazonowicz@tandf.co.uk\\\",\\\"postalCode\\\":\\\"OX14\\\",\\\"state\\\":\\\"OXF\\\",\\\"city\\\":\\\"Abingdon\\\",\\\"country\\\":\\\"United Kingdom\\\",\\\"province\\\":\\\"OXF\\\",\\\"telephone\\\":\\\"1234567\\\"},{\\\"title\\\":\\\"Mr\\\",\\\"firstName\\\":\\\"f 1\\\",\\\"lastName\\\":\\\"l1 \\\",\\\"email\\\":\\\"test1\\\",\\\"postalCode\\\":\\\"OX14\\\",\\\"state\\\":\\\"OXF\\\",\\\"city\\\":\\\"Abingdon\\\",\\\"country\\\":\\\"United Kingdom\\\",\\\"province\\\":\\\"OXF\\\",\\\"telephone\\\":\\\"1234567\\\"},{\\\"title\\\":\\\"Mr\\\",\\\"firstName\\\":\\\"f 2\\\",\\\"lastName\\\":\\\"l 2 \\\",\\\"email\\\":\\\"test2\\\",\\\"postalCode\\\":\\\"OX14\\\",\\\"state\\\":\\\"OXF\\\",\\\"city\\\":\\\"Abingdon\\\",\\\"country\\\":\\\"United Kingdom\\\",\\\"province\\\":\\\"OXF\\\",\\\"telephone\\\":\\\"1234567\\\"},{\\\"title\\\":\\\"Mr\\\",\\\"firstName\\\":\\\"f 3\\\",\\\"lastName\\\":\\\"l 3 \\\",\\\"email\\\":\\\"test 3\\\",\\\"postalCode\\\":\\\"OX14\\\",\\\"state\\\":\\\"OXF\\\",\\\"city\\\":\\\"Abingdon\\\",\\\"country\\\":\\\"United Kingdom\\\",\\\"province\\\":\\\"OXF\\\",\\\"telephone\\\":\\\"1234567\\\"}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#888d5df4-9e22-41c0-987a-ec30b4834ce4">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="customer"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
